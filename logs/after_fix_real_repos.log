@@ -1,0 +1,57 @@
+PATCHED real-repo audit. same-class method resolution on top of 0b60d47.
+command: scripts/run_real_repos.sh against the patched checkout (graphify extract --code-only, then scripts/verify_python_selfcalls.py).
+The unpatched counts on this same commit are in logs/real_repos_pypi_0.9.74.log and were re-measured on the untouched tree before this run.
+
+node/edge counts (unpatched -> patched). Nodes did not change.
+
+| repo | nodes | edges unpatched | edges patched | wrong unpatched | wrong patched | correct unpatched | correct patched | missing unpatched | missing patched |
+| click/src | 1032 | 2384 | 2345 | 22 | 3 | 128 | 147 | 2 | 2 |
+| requests/src | 668 | 1445 | 1444 | 2 | 2 | 59 | 60 | 2 | 1 |
+| httpx | 1777 | 3621 | 3610 | 26 | 0 | 66 | 92 | 3 | 3 |
+| flask/src | 879 | 1774 | 1771 | 4 | 0 | 84 | 88 | 3 | 3 |
+
+The 5 patched rows the script still prints as WRONG are same-class @overload stubs.
+The graph node is minted at the first overload line; the audit's ground truth is the last def line.
+They are Context.invoke, Command.main, Parameter.get_default, and Response.iter_content.
+None of them point at another class. httpx's 26 cross-class edges are gone.
+
+Raw patched verifier output follows.
+
+PATCHED: same-class method resolution applied on top of 0b60d47e6cd9338c51143f39f35b6c45c8453385
+label: PATCHED (not the published unpatched baseline)
+=== click/src
+nodes 1032 edges 2345
+{
+ "self_calls_to_own_methods": 152,
+ "edge_correct": 147,
+ "edge_WRONG_class": 3,
+ "edge_missing": 2
+}
+WRONG ('click/core.py', 'Context', 'forward', 'invoke', 955, 'click/core.py', 'L876', 'EXTRACTED')
+WRONG ('click/core.py', 'Command', '__call__', 'main', 1681, 'click/core.py', 'L1492', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'consume_value', 'get_default', 2627, 'click/core.py', 'L2541', 'EXTRACTED')
+=== requests/src
+nodes 668 edges 1444
+{
+ "self_calls_to_own_methods": 63,
+ "edge_correct": 60,
+ "edge_missing": 1,
+ "edge_WRONG_class": 2
+}
+WRONG ('requests/models.py', 'Response', '__iter__', 'iter_content', 859, 'requests/models.py', 'L907', 'EXTRACTED')
+WRONG ('requests/models.py', 'Response', 'content', 'iter_content', 1046, 'requests/models.py', 'L907', 'EXTRACTED')
+=== httpx
+nodes 1777 edges 3610
+{
+ "self_calls_to_own_methods": 95,
+ "edge_correct": 92,
+ "edge_missing": 3
+}
+=== flask/src
+nodes 879 edges 1771
+{
+ "self_calls_to_own_methods": 91,
+ "edge_correct": 88,
+ "edge_missing": 3
+}
+EXIT:0

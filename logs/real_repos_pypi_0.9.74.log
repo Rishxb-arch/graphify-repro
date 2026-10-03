@@ -1,0 +1,82 @@
+=== click/src
+{
+ "self_calls_to_own_methods": 152,
+ "edge_missing": 2,
+ "edge_correct": 128,
+ "edge_WRONG_class": 22
+}
+WRONG ('click/types.py', '_NumberRangeBase', 'convert', '_clamp', 683, 'click/types.py', 'L809', 'EXTRACTED')
+WRONG ('click/types.py', '_NumberRangeBase', 'convert', '_clamp', 686, 'click/types.py', 'L809', 'EXTRACTED')
+WRONG ('click/core.py', 'Context', 'forward', 'invoke', 955, 'click/core.py', 'L2048', 'EXTRACTED')
+WRONG ('click/core.py', 'Command', 'format_usage', 'collect_usage_pieces', 1189, 'click/core.py', 'L1997', 'EXTRACTED')
+WRONG ('click/core.py', 'Command', 'format_help', 'format_options', 1300, 'click/core.py', 'L2002', 'EXTRACTED')
+WRONG ('click/core.py', 'Command', 'make_context', 'parse_args', 1389, 'click/core.py', 'L2034', 'EXTRACTED')
+WRONG ('click/core.py', 'Command', '__call__', 'main', 1681, 'click/core.py', 'L1492', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'to_info_dict', 'list_commands', 1817, 'click/core.py', 'L2218', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'to_info_dict', 'get_command', 1818, 'click/core.py', 'L2201', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'format_commands', 'list_commands', 2011, 'click/core.py', 'L2218', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'format_commands', 'get_command', 2012, 'click/core.py', 'L2201', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'resolve_command', 'get_command', 2122, 'click/core.py', 'L2201', 'EXTRACTED')
+WRONG ('click/core.py', 'Group', 'resolve_command', 'get_command', 2128, 'click/core.py', 'L2201', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', '__init__', '_parse_decls', 2386, 'click/core.py', 'L3862', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'consume_value', 'value_from_envvar', 2610, 'click/core.py', 'L3678', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'consume_value', 'get_default', 2627, 'click/core.py', 'L3295', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'value_from_envvar', 'resolve_envvar_value', 2828, 'click/core.py', 'L3654', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'handle_parse_result', 'consume_value', 2858, 'click/core.py', 'L3726', 'EXTRACTED')
+WRONG ('click/core.py', 'Parameter', 'handle_parse_result', 'process_value', 2883, 'click/core.py', 'L3782', 'EXTRACTED')
+WRONG ('click/exceptions.py', 'ClickException', 'show', 'format_message', 62, 'click/exceptions.py', 'L356', 'EXTRACTED')
+WRONG ('click/shell_completion.py', 'ShellComplete', 'complete', 'get_completion_args', 383, 'click/shell_completion.py', 'L530', 'EXTRACTED')
+WRONG ('click/shell_completion.py', 'ShellComplete', 'complete', 'format_completion', 385, 'click/shell_completion.py', 'L542', 'EXTRACTED')
+=== requests/src
+{
+ "self_calls_to_own_methods": 63,
+ "edge_correct": 59,
+ "edge_WRONG_class": 2,
+ "edge_missing": 2
+}
+WRONG ('requests/models.py', 'Response', '__iter__', 'iter_content', 859, 'requests/models.py', 'L907', 'EXTRACTED')
+WRONG ('requests/models.py', 'Response', 'content', 'iter_content', 1046, 'requests/models.py', 'L907', 'EXTRACTED')
+=== httpx
+{
+ "self_calls_to_own_methods": 95,
+ "edge_correct": 66,
+ "edge_WRONG_class": 26,
+ "edge_missing": 3
+}
+WRONG ('httpx/_auth.py', 'Auth', 'sync_auth_flow', 'auth_flow', 74, 'httpx/_auth.py', 'L193', 'EXTRACTED')
+WRONG ('httpx/_auth.py', 'Auth', 'async_auth_flow', 'auth_flow', 99, 'httpx/_auth.py', 'L193', 'EXTRACTED')
+WRONG ('httpx/_auth.py', 'BasicAuth', '__init__', '_build_auth_header', 133, 'httpx/_auth.py', 'L255', 'EXTRACTED')
+WRONG ('httpx/_auth.py', 'NetRCAuth', 'auth_flow', '_build_auth_header', 164, 'httpx/_auth.py', 'L255', 'EXTRACTED')
+WRONG ('httpx/_multipart.py', 'DataField', 'get_length', 'render_headers', 106, 'httpx/_multipart.py', 'L186', 'EXTRACTED')
+WRONG ('httpx/_multipart.py', 'DataField', 'get_length', 'render_data', 107, 'httpx/_multipart.py', 'L203', 'EXTRACTED')
+WRONG ('httpx/_multipart.py', 'DataField', 'render', 'render_headers', 111, 'httpx/_multipart.py', 'L186', 'EXTRACTED')
+WRONG ('httpx/_multipart.py', 'DataField', 'render', 'render_data', 112, 'httpx/_multipart.py', 'L203', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', '__init__', '_init_transport', 688, 'httpx/_client.py', 'L1432', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', '__init__', '_init_proxy_transport', 700, 'httpx/_client.py', 'L1454', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'request', 'send', 825, 'httpx/_client.py', 'L1594', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'stream', 'send', 868, 'httpx/_client.py', 'L1594', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'send', '_send_handling_auth', 914, 'httpx/_client.py', 'L1645', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', '_send_handling_auth', '_send_handling_redirects', 942, 'httpx/_client.py', 'L1679', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', '_send_handling_redirects', '_send_single_request', 979, 'httpx/_client.py', 'L1717', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', '_send_single_request', '_transport_for_url', 1005, 'httpx/_client.py', 'L1474', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'get', 'request', 1053, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'options', 'request', 1082, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'head', 'request', 1111, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'post', 'request', 1144, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'put', 'request', 1181, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'patch', 'request', 1218, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_client.py', 'Client', 'delete', 'request', 1251, 'httpx/_client.py', 'L1485', 'EXTRACTED')
+WRONG ('httpx/_decoders.py', 'DeflateDecoder', 'decode', 'decode', 75, 'httpx/_decoders.py', 'L333', 'EXTRACTED')
+WRONG ('httpx/_models.py', 'Request', '__init__', '_prepare', 419, 'httpx/_models.py', 'L571', 'EXTRACTED')
+WRONG ('httpx/_models.py', 'Request', '__init__', 'read', 423, 'httpx/_models.py', 'L876', 'EXTRACTED')
+=== flask/src
+{
+ "self_calls_to_own_methods": 91,
+ "edge_correct": 84,
+ "edge_WRONG_class": 4,
+ "edge_missing": 3
+}
+WRONG ('flask/json/tag.py', 'JSONTag', 'tag', 'to_json', 90, 'flask/json/tag.py', 'L212', 'EXTRACTED')
+WRONG ('flask/json/provider.py', 'JSONProvider', 'dump', 'dumps', 57, 'flask/json/provider.py', 'L166', 'EXTRACTED')
+WRONG ('flask/json/provider.py', 'JSONProvider', 'load', 'loads', 73, 'flask/json/provider.py', 'L181', 'EXTRACTED')
+WRONG ('flask/json/provider.py', 'JSONProvider', 'response', 'dumps', 105, 'flask/json/provider.py', 'L166', 'EXTRACTED')

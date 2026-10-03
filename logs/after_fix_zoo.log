@@ -1,0 +1,17 @@
+PATCHED zoo. same-class method resolution on top of 0b60d47e6cd9338c51143f39f35b6c45c8453385.
+command: bash scripts/run_zoo.sh <patched graphify>
+Expected: Dog.speak -> Dog.bark [EXTRACTED] in every language.
+Unpatched result is logs/zoo_repo_HEAD_0b60d47.log (Dog.speak -> Cat.bark).
+
+Zoo.cs: .Speak() (zoo_cs_zoo_dog_speak) -> .Bark() (zoo_cs_zoo_dog_bark, Zoo.cs L3) [EXTRACTED] @L2
+Zoo.java: .speak() (zoo_java_zoo_dog_speak) -> .bark() (zoo_java_zoo_dog_bark, Zoo.java L3) [EXTRACTED] @L2
+zoo.cpp: .speak() (zoo_cpp_zoo_dog_speak) -> .bark() (zoo_cpp_zoo_dog_bark, zoo.cpp L4) [EXTRACTED] @L3
+zoo.go: .Speak() (zoo_go_zoo_dog_speak) -> .Bark() (zoo_go_zoo_dog_bark, zoo.go L7) [EXTRACTED] @L6
+zoo.js: .speak() (zoo_js_zoo_dog_speak) -> .bark() (zoo_js_zoo_dog_bark, zoo.js L3) [EXTRACTED] @L2
+zoo.kt: .speak() (zoo_kt_zoo_dog_speak) -> .bark() (zoo_kt_zoo_dog_bark, zoo.kt L3) [EXTRACTED] @L2
+zoo.php: .speak() (zoo_php_zoo_dog_speak) -> .bark() (zoo_php_zoo_dog_bark, zoo.php L4) [EXTRACTED] @L3
+zoo.py: .speak() (zoo_py_zoo_dog_speak) -> .bark() (zoo_py_zoo_dog_bark, zoo.py L5) [EXTRACTED] @L3
+zoo.rb: .speak() (zoo_rb_zoo_dog_speak) -> .bark() (zoo_rb_zoo_dog_bark, zoo.rb L5) [EXTRACTED] @L3
+zoo.rs: .speak() (zoo_rs_zoo_dog_speak) -> .bark() (zoo_rs_zoo_dog_bark, zoo.rs L5) [EXTRACTED] @L4
+zoo.swift: .speak() (zoo_swift_zoo_dog_speak) -> .bark() (zoo_swift_zoo_dog_bark, zoo.swift L3) [EXTRACTED] @L2
+zoo.ts: .speak() (zoo_ts_zoo_dog_speak) -> .bark() (zoo_ts_zoo_dog_bark, zoo.ts L3) [EXTRACTED] @L2

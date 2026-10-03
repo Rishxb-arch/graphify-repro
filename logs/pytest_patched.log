@@ -1,0 +1,329 @@
+PATCHED. same commit plus fix(extract): resolve self/this calls to the enclosing class
+command: uv run pytest tests/ -q --tb=line
+28 failed, 6150 passed, 102 skipped. The 28 failures are the same set as the unpatched baseline.
+15 new tests in tests/test_same_class_method_resolution.py passed (6135 -> 6150).
+Absolute paths stripped.
+
+........................................................................ [  1%]
+........................................................................ [  2%]
+....................s............s...................................... [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+..........s............................................................. [  9%]
+......................................................................ss [ 10%]
+........................................................................ [ 11%]
+.....................................................s.................. [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+....................................FFFF.FFF............................ [ 24%]
+........................................................................ [ 25%]
+..................................................sss................... [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+................................................ssss.................... [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+................................ssss.................................... [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+.................................................................s...... [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+.......................................................................s [ 57%]
+ssssssssssss............................................................ [ 58%]
+.....................................................sssss.s.s.......... [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+...........................s............................................ [ 63%]
+........................................................................ [ 64%]
+.....................................ssssssssssssssssss...ssssssss.sssss [ 65%]
+ssss.................................................................... [ 66%]
+................................................FFFF.................... [ 67%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+.......ssssssss...ssssssssss..s......................................... [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+.........................FFFFFFF........................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 83%]
+...........................................s............................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 87%]
+.......................................................FFFFF............ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+......................................FF.FFF............................ [ 94%]
+...............................................ss....................... [ 95%]
+.............................................................s.......... [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+...........                                                              [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert {'helper/1', .../1', 'worker'} <= set()
+      
+      Extra items in the left set:
+      'run/1'
+      'worker'
+      'helper/2'
+      'helper/1'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:54: AssertionError: assert {'helper/1', .../1', 'worker'} <= set()
+E   AssertionError: assert {'DEFAULT', '... 'other', ...} <= set()
+      
+      Extra items in the left set:
+      'worker'
+      'quoted/0'
+      'gen_server'
+      'result/0'
+      'HEADER_VALUE'...
+      
+      ...Full output truncated (6 lines hidden), use '-vv' to show
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+  warning: 1 .escript file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+  warning: 1 .hrl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:86: AssertionError: assert {'DEFAULT', '... 'other', ...} <= set()
+E   AssertionError: assert {'helper/0', .../0', 'sample'} <= set()
+      
+      Extra items in the left set:
+      'helper/0'
+      'sample'
+      'run/0'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:101: AssertionError: assert {'helper/0', .../0', 'sample'} <= set()
+E   AssertionError: assert ('run/0', 'helper/1') in set()
+     +  where set() = _edge_labels({'edges': [], 'extracted_sources': ['(pytest-tmp)/pytest-...vv9bt6d60m_vw180000gn/T/pytest-tmp/pytest-9/test_erlang_local_fun_referenc0/worker.erl'], 'input_tokens': 0, ...}, 'indirect_call')
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:122: AssertionError: assert ('run/0', 'helper/1') in set()
+E   AssertionError: assert ('run/0', 'helper/1') in set()
+     +  where set() = _edge_labels({'edges': [], 'extracted_sources': ['(pytest-tmp)/pytest-...vv9bt6d60m_vw180000gn/T/pytest-tmp/pytest-9/test_erlang_direct_call_stays_0/worker.erl'], 'input_tokens': 0, ...}, 'calls')
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:156: AssertionError: assert ('run/0', 'helper/1') in set()
+E   AssertionError: assert ('run/0', 'helper/1') in set()
+     +  where set() = _edge_labels({'edges': [], 'extracted_sources': ['(pytest-tmp)/pytest-...vv9bt6d60m_vw180000gn/T/pytest-tmp/pytest-9/test_erlang_call_inside_anonym0/worker.erl'], 'input_tokens': 0, ...}, 'calls')
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:173: AssertionError: assert ('run/0', 'helper/1') in set()
+E   AssertionError: assert 'valid/0' in set()
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .erl file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[erlang]" (#1745)
+(checkout)/tests/test_erlang_extractor.py:183: AssertionError: assert 'valid/0' in set()
+E   ModuleNotFoundError: No module named 'openai'
+(checkout)/.venv/lib/python3.12/site-packages/_pytest/monkeypatch.py:67: ModuleNotFoundError: No module named 'openai'
+E   ModuleNotFoundError: No module named 'openai'
+(checkout)/.venv/lib/python3.12/site-packages/_pytest/monkeypatch.py:67: ModuleNotFoundError: No module named 'openai'
+E   ModuleNotFoundError: No module named 'openai'
+(checkout)/.venv/lib/python3.12/site-packages/_pytest/monkeypatch.py:67: ModuleNotFoundError: No module named 'openai'
+E   ModuleNotFoundError: No module named 'openai'
+(checkout)/.venv/lib/python3.12/site-packages/_pytest/monkeypatch.py:67: ModuleNotFoundError: No module named 'openai'
+E   AssertionError: assert 'helper()' in set()
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .r file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[r]" (#1745)
+(checkout)/tests/test_r_extractor.py:51: AssertionError: assert 'helper()' in set()
+E   AssertionError: assert {'Person', 'a...outer()', ...} <= set()
+      
+      Extra items in the left set:
+      'right_assigned()'
+      'run()'
+      'dplyr'
+      'outer()'
+      'inner()'...
+      
+      ...Full output truncated (3 lines hidden), use '-vv' to show
+----------------------------- Captured stderr call -----------------------------
+  warning: 2 .r file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[r]" (#1745)
+(checkout)/tests/test_r_extractor.py:81: AssertionError: assert {'Person', 'a...outer()', ...} <= set()
+E   AssertionError: assert {'double()', 'run()'} <= set()
+      
+      Extra items in the left set:
+      'double()'
+      'run()'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .r file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[r]" (#1745)
+(checkout)/tests/test_r_extractor.py:99: AssertionError: assert {'double()', 'run()'} <= set()
+E   AssertionError: assert 'valid()' in set()
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .r file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-language-pack not installed. Install it with: pip install "graphifyy[r]" (#1745)
+(checkout)/tests/test_r_extractor.py:110: AssertionError: assert 'valid()' in set()
+E   AssertionError: assert {'Counter', '...', 'report()'} <= set()
+      
+      Extra items in the left set:
+      'increment()'
+      'Counter'
+      'report()'
+(checkout)/tests/test_r_extractor.py:130: AssertionError: assert {'Counter', '...', 'report()'} <= set()
+E   AssertionError: assert {'Acc', 'add()'} <= set()
+      
+      Extra items in the left set:
+      'Acc'
+      'add()'
+(checkout)/tests/test_r_extractor.py:147: AssertionError: assert {'Acc', 'add()'} <= set()
+E   AssertionError: self$ call dropped
+    assert ('increment()', 'report()') in set()
+(checkout)/tests/test_r_extractor.py:171: AssertionError: self$ call dropped
+E   AssertionError: assert {'Counted', '...', 'record()'} <= set()
+      
+      Extra items in the left set:
+      'Counter'
+      'record()'
+      'Counted'
+      'increment()'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .sol file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-solidity not installed. Install it with: pip install "graphifyy[solidity]" (#1745)
+(checkout)/tests/test_solidity_extractor.py:56: AssertionError: assert {'Counted', '...', 'record()'} <= set()
+E   AssertionError: assert {'halve()', 'quarter()'} <= set()
+      
+      Extra items in the left set:
+      'halve()'
+      'quarter()'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .sol file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-solidity not installed. Install it with: pip install "graphifyy[solidity]" (#1745)
+(checkout)/tests/test_solidity_extractor.py:75: AssertionError: assert {'halve()', 'quarter()'} <= set()
+E   AssertionError: assert {'Base', 'Cha...', 'Lib', ...} <= set()
+      
+      Extra items in the left set:
+      'Off'
+      'run()'
+      'Changed'
+      'On'
+      'count'...
+      
+      ...Full output truncated (9 lines hidden), use '-vv' to show
+----------------------------- Captured stderr call -----------------------------
+  warning: 3 .sol file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-solidity not installed. Install it with: pip install "graphifyy[solidity]" (#1745)
+(checkout)/tests/test_solidity_extractor.py:112: AssertionError: assert {'Base', 'Cha...', 'Lib', ...} <= set()
+E   AssertionError: assert {'Sample', 'h...r()', 'run()'} <= set()
+      
+      Extra items in the left set:
+      'helper()'
+      'Sample'
+      'run()'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .sol file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-solidity not installed. Install it with: pip install "graphifyy[solidity]" (#1745)
+(checkout)/tests/test_solidity_extractor.py:126: AssertionError: assert {'Sample', 'h...r()', 'run()'} <= set()
+E   AssertionError: assert 'valid()' in set()
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .sol file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-solidity not installed. Install it with: pip install "graphifyy[solidity]" (#1745)
+(checkout)/tests/test_solidity_extractor.py:137: AssertionError: assert 'valid()' in set()
+E   AssertionError: assert {'Counter', '...r()', 'Run()'} <= set()
+      
+      Extra items in the left set:
+      'Counter'
+      'Run()'
+      'Helper()'
+      'Demo'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .vb file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-vb-dotnet not installed. Install it with: pip install "graphifyy[vbnet]" (#1745)
+(checkout)/tests/test_vbnet_extractor.py:58: AssertionError: assert {'Counter', '...r()', 'Run()'} <= set()
+E   AssertionError: assert ('Run()', 'Log()') in set()
+     +  where set() = _edge_labels({'edges': [], 'extracted_sources': ['(pytest-tmp)/pytest-...5jx7vv9bt6d60m_vw180000gn/T/pytest-tmp/pytest-9/test_vbnet_module_qualified_ca0/App.vb'], 'input_tokens': 0, ...}, 'calls')
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .vb file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-vb-dotnet not installed. Install it with: pip install "graphifyy[vbnet]" (#1745)
+(checkout)/tests/test_vbnet_extractor.py:85: AssertionError: assert ('Run()', 'Log()') in set()
+E   AssertionError: assert {'BaseCounter...IWorker', ...} <= {'Demo.vbproj...dk', 'net8.0'}
+      
+      Extra items in the left set:
+      'BaseCounter'
+      'Changed'
+      'Demo'
+      'State'
+      'Helper()'...
+      
+      ...Full output truncated (10 lines hidden), use '-vv' to show
+----------------------------- Captured stderr call -----------------------------
+  warning: 2 .vb file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-vb-dotnet not installed. Install it with: pip install "graphifyy[vbnet]" (#1745)
+(checkout)/tests/test_vbnet_extractor.py:152: AssertionError: assert {'BaseCounter...IWorker', ...} <= {'Demo.vbproj...dk', 'net8.0'}
+E   AssertionError: assert {'Fixtures', ...()', 'Sample'} <= set()
+      
+      Extra items in the left set:
+      'Fixtures'
+      'Helper()'
+      'Run()'
+      'Sample'
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .vb file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-vb-dotnet not installed. Install it with: pip install "graphifyy[vbnet]" (#1745)
+(checkout)/tests/test_vbnet_extractor.py:167: AssertionError: assert {'Fixtures', ...()', 'Sample'} <= set()
+E   AssertionError: assert 'valid()' in set()
+----------------------------- Captured stderr call -----------------------------
+  warning: 1 .vb file(s) contributed nothing to the graph because a dependency is missing: tree-sitter-vb-dotnet not installed. Install it with: pip install "graphifyy[vbnet]" (#1745)
+(checkout)/tests/test_vbnet_extractor.py:178: AssertionError: assert 'valid()' in set()
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_hypothesis_pytestplugin.py:481
+  (checkout)/.venv/lib/python3.12/site-packages/_hypothesis_pytestplugin.py:481: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
+    warnings.warn(
+
+tests/test_chunking.py::test_checkpoint_scopes_cache_writes_to_chunk_files
+tests/test_chunking.py::test_out_of_scope_nodes_are_dropped_from_merged_result
+  (checkout)/graphify/llm.py:2695: RuntimeWarning: semantic cache skipped out-of-scope source_file 'B.py'; the file was not dispatched for extraction
+    _scs(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_erlang_extractor.py::test_erlang_functions_resolve_by_name_and_arity
+FAILED tests/test_erlang_extractor.py::test_erlang_attributes_includes_and_remote_calls
+FAILED tests/test_erlang_extractor.py::test_erlang_fixture_uses_normal_extract_path
+FAILED tests/test_erlang_extractor.py::test_erlang_local_fun_reference_links_to_the_function
+FAILED tests/test_erlang_extractor.py::test_erlang_direct_call_stays_a_call_not_indirect
+FAILED tests/test_erlang_extractor.py::test_erlang_call_inside_anonymous_fun_still_captured
+FAILED tests/test_erlang_extractor.py::test_erlang_malformed_tail_comments_and_strings_do_not_create_phantoms
+FAILED tests/test_ollama_retry_cap.py::test_ollama_defaults_to_zero_sdk_retries
+FAILED tests/test_ollama_retry_cap.py::test_ollama_honors_explicit_max_retries
+FAILED tests/test_ollama_retry_cap.py::test_cloud_backend_keeps_default_retries
+FAILED tests/test_ollama_retry_cap.py::test_api_timeout_is_passed_to_client
+FAILED tests/test_r_extractor.py::test_r_functions_and_calls_are_extracted - ...
+FAILED tests/test_r_extractor.py::test_r_assignments_sources_and_classes_are_extracted
+FAILED tests/test_r_extractor.py::test_r_fixture_uses_normal_extract_path - A...
+FAILED tests/test_r_extractor.py::test_r_malformed_tail_comments_and_strings_do_not_create_phantoms
+FAILED tests/test_r_extractor.py::test_r_namespaced_r6class_extracts_the_class_body
+FAILED tests/test_r_extractor.py::test_r_namespaced_setrefclass_is_recognised
+FAILED tests/test_r_extractor.py::test_r6_self_and_private_method_calls_resolve
+FAILED tests/test_solidity_extractor.py::test_solidity_contract_members_and_calls_are_extracted
+FAILED tests/test_solidity_extractor.py::test_solidity_free_functions_and_their_calls_are_extracted
+FAILED tests/test_solidity_extractor.py::test_solidity_types_imports_inheritance_overloads_and_modifiers
+FAILED tests/test_solidity_extractor.py::test_solidity_fixture_uses_normal_extract_path
+FAILED tests/test_solidity_extractor.py::test_solidity_malformed_tail_comments_and_strings_do_not_create_phantoms
+FAILED tests/test_vbnet_extractor.py::test_vbnet_class_methods_and_case_insensitive_calls
+FAILED tests/test_vbnet_extractor.py::test_vbnet_module_qualified_call_resolves_to_the_module_method
+FAILED tests/test_vbnet_extractor.py::test_vbnet_types_members_relationships_and_partial_calls
+FAILED tests/test_vbnet_extractor.py::test_vbnet_fixture_uses_normal_extract_path
+FAILED tests/test_vbnet_extractor.py::test_vbnet_malformed_tail_comments_and_strings_do_not_create_phantoms
+28 failed, 6150 passed, 102 skipped, 3 warnings in 123.89s (0:02:03)
+EXIT:1

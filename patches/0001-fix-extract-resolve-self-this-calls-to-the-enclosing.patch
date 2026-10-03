@@ -1,0 +1,743 @@
+From 139fb224202ca48bf3e6b9cf18ae5673fc565a08 Mon Sep 17 00:00:00 2001
+From: Rishxb-arch <270784950+Rishxb-arch@users.noreply.github.com>
+Date: Sat, 3 Oct 2026 22:36:53 +0530
+Subject: [PATCH] fix(extract): resolve self/this calls to the enclosing class
+
+A file-wide label map let a later class's method win, so a self/this/bare
+call inside Dog became an EXTRACTED edge to Cat's same-named method.
+Same-class calls now use the method edges of the enclosing class. An
+unrelated class in the file is left unresolved; a hit that is already an
+ancestor is kept, and module-level functions still resolve.
+
+Co-Authored-By: Grok 4.7 <noreply@x.ai>
+---
+ CHANGELOG.md                               |   4 +
+ graphify/extractors/base.py                |  65 +++++
+ graphify/extractors/engine.py              | 119 +++++++-
+ graphify/extractors/go.py                  |  38 ++-
+ graphify/extractors/rust.py                |  22 +-
+ tests/test_same_class_method_resolution.py | 317 +++++++++++++++++++++
+ 6 files changed, 562 insertions(+), 3 deletions(-)
+ create mode 100644 tests/test_same_class_method_resolution.py
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index e7ef02e..c7c73d2 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -2,6 +2,10 @@
+ 
+ Full release notes with details on each version: [GitHub Releases](https://github.com/Graphify-Labs/graphify/releases)
+ 
++## Unreleased
++
++- Fix: a receiver-less call or a `self`/`cls`/`this` call inside a method resolves to that method's own class when the class defines the callee. A same-named method of an unrelated class in the file no longer wins just because it was declared last, and that guess is no longer tagged `EXTRACTED`. If the class does not define the callee, an unrelated class is left unresolved; a hit that is already an ancestor (`inherits` / `mixes_in`) is kept. Module-level functions and `super()`/`base` calls to an ancestor are unchanged. Go receiver calls (`d.Method()`) and Rust `self.method()` follow the same rule.
++
+ ## 0.9.74 (2026-10-02)
+ 
+ - Feature: four more language extractors gained structural depth. **Ruby** paren-less self-sends (`do_thing` with no receiver or parens) are now captured as calls, with a local-variable/parameter/block-parameter in scope correctly suppressing the call (fail-closed, no fabrication) (#3960, thanks @rajatnagda45). **TypeScript** `abstract` method signatures in an abstract class are now extracted as callable method members and resolve as call targets (#3961, thanks @rajatnagda45). **Scala** deferred (abstract) method declarations in traits and abstract classes (`def foo: Int`, no body) are now extracted as methods (#3962, thanks @rajatnagda45). **C++** a member-function declaration inside a class (`void foo();`, defined out-of-line) is now classified as a method rather than a field, including pure-virtual, `const`, operator, and destructor forms; real data members stay fields (#3963, thanks @rajatnagda45).
+diff --git a/graphify/extractors/base.py b/graphify/extractors/base.py
+index 148fc18..f2faa4c 100644
+--- a/graphify/extractors/base.py
++++ b/graphify/extractors/base.py
+@@ -83,3 +83,68 @@ def _file_stem(path: Path) -> str:
+ 
+ def _read_text(node, source: bytes) -> str:
+     return source[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
++
++
++def callable_label_name(label: str) -> str:
++    """Bare name of a function or method label (``.bark()`` / ``bark()`` -> ``bark``)."""
++    return str(label).strip("()").lstrip(".")
++
++
++def index_methods_by_class(
++    nodes: list,
++    edges: list,
++) -> tuple[dict[str, str], dict[tuple[str, str], str]]:
++    """Index ``method`` edges the extractor has already emitted.
++
++    Returns ``(method_nid -> class_nid, (class_nid, method_name) -> method_nid)``.
++    A repeated name on one class keeps the last edge, which is the same
++    last-definition rule the file-wide label map used *within* a single class.
++    """
++    by_id = {
++        n.get("id"): n for n in nodes if isinstance(n, dict) and n.get("id")
++    }
++    owner: dict[str, str] = {}
++    by_class: dict[tuple[str, str], str] = {}
++    for edge in edges:
++        if not isinstance(edge, dict) or edge.get("relation") != "method":
++            continue
++        src, tgt = edge.get("source"), edge.get("target")
++        if not src or not tgt:
++            continue
++        owner[str(tgt)] = str(src)
++        node = by_id.get(tgt)
++        if node is None:
++            continue
++        name = callable_label_name(str(node.get("label", "")))
++        if name:
++            by_class[(str(src), name)] = str(tgt)
++    return owner, by_class
++
++
++def resolve_own_class_method(
++    caller_nid: str,
++    callee_name: str,
++    method_owner: dict[str, str],
++    methods_by_class: dict[tuple[str, str], str],
++    unscoped: str | None,
++) -> tuple[bool, str | None]:
++    """Bind a same-class call using ``method`` edges, not the file-wide name map.
++
++    When ``caller_nid`` is a method of class C, the callee resolves to C's own
++    method of that name. If C does not define it, a file-wide hit that belongs
++    to a *different* class is dropped (``None``) rather than used. A hit that
++    is not a method — a module-level function — is kept.
++
++    ``(False, None)`` means the caller is not a method; keep the unscoped lookup.
++    """
++    owner = method_owner.get(caller_nid)
++    if not owner:
++        return False, None
++    own = methods_by_class.get((owner, callee_name))
++    if own:
++        return True, own
++    if unscoped:
++        other = method_owner.get(unscoped)
++        if other is not None and other != owner:
++            return True, None
++    return True, unscoped
+diff --git a/graphify/extractors/engine.py b/graphify/extractors/engine.py
+index 0914fe1..fc8c113 100644
+--- a/graphify/extractors/engine.py
++++ b/graphify/extractors/engine.py
+@@ -4,7 +4,14 @@ from __future__ import annotations
+ import hashlib
+ import importlib
+ import json
+-from graphify.extractors.base import _LANGUAGE_BUILTIN_GLOBALS, _file_stem, _make_id, _read_text
++from graphify.extractors.base import (
++    _LANGUAGE_BUILTIN_GLOBALS,
++    _file_stem,
++    _make_id,
++    _read_text,
++    index_methods_by_class,
++    resolve_own_class_method,
++)
+ from graphify.ids import normalize_id
+ from graphify.extractors.models import LanguageConfig
+ from graphify.extractors.resolution import _resolve_js_import_target
+@@ -6171,6 +6178,98 @@ def _extract_generic(
+     for _e in edges:
+         if _e.get("relation") == "inherits":
+             _local_bases.setdefault(_e["source"], []).append(_e["target"])
++    # Same-class call resolution. `label_to_nid` is one file-wide map, so a later
++    # class's `bark` overwrites an earlier one and `self.bark()` / `this.bark()` /
++    # a bare `bark()` inside Dog binds to Cat.bark. Method edges already record
++    # which class owns each method; consult those instead of the file-wide map
++    # when the call is receiver-less implicit-this or on self/this/cls.
++    _method_owner, _methods_by_class = index_methods_by_class(nodes, edges)
++    _heritage: dict[str, list[str]] = {}
++    for _e in edges:
++        if _e.get("relation") in ("inherits", "mixes_in"):
++            _h_src, _h_tgt = _e.get("source"), _e.get("target")
++            if _h_src and _h_tgt:
++                _heritage.setdefault(_h_src, []).append(_h_tgt)
++
++    def _ancestor_classes(class_nid: str) -> set[str]:
++        seen: set[str] = set()
++        queue = list(_heritage.get(class_nid, []))
++        while queue:
++            base = queue.pop()
++            if base in seen:
++                continue
++            seen.add(base)
++            queue.extend(_heritage.get(base, []))
++        return seen
++
++    # Receivers the existing defer rules already treat as staying on this class.
++    # Python keeps self/cls/super on the in-file map; Java/C#/Kotlin/Swift/C++/Scala
++    # bare calls are implicit this; a Ruby call with no receiver is implicit self.
++    _SELF_RECEIVERS = {"self", "cls", "this", "$this"}
++    _SUPER_RECEIVERS = {"super", "base", "parent"}
++    _IMPLICIT_THIS = {
++        "tree_sitter_java",
++        "tree_sitter_c_sharp",
++        "tree_sitter_kotlin",
++        "tree_sitter_swift",
++        "tree_sitter_cpp",
++        "tree_sitter_scala",
++    }
++    # `new Foo()` names a type, not an implicit-this method. Scoping it onto a
++    # same-named method of the enclosing class would steal the constructor edge.
++    _CONSTRUCTOR_CALLS = {
++        "object_creation_expression",
++        "new_expression",
++        "implicit_object_creation_expression",
++    }
++
++    def _scope_same_class_call(
++        caller_nid: str,
++        callee_name: str,
++        unscoped: str | None,
++        *,
++        is_member_call: bool,
++        member_receiver: str | None,
++        ruby_bare_self_send: bool,
++    ) -> str | None:
++        if caller_nid not in _method_owner:
++            return unscoped
++        if ruby_bare_self_send or (
++            not is_member_call and config.ts_module == "tree_sitter_ruby"
++        ) or (
++            not is_member_call and config.ts_module in _IMPLICIT_THIS
++        ) or (
++            is_member_call and member_receiver in _SELF_RECEIVERS
++        ):
++            handled, scoped = resolve_own_class_method(
++                caller_nid, callee_name, _method_owner, _methods_by_class, unscoped,
++            )
++            if not handled:
++                return unscoped
++            # The class does not define it. Keep the file-wide hit only when it
++            # is already an ancestor (inherits / mixes_in). An unrelated class
++            # is dropped instead of winning because it was declared last.
++            if scoped is None and unscoped:
++                owner = _method_owner.get(caller_nid)
++                cand_owner = _method_owner.get(unscoped)
++                if owner and cand_owner and cand_owner in _ancestor_classes(owner):
++                    return unscoped
++            return scoped
++        if is_member_call and member_receiver in _SUPER_RECEIVERS:
++            # Keep super()/base on the unscoped hit only when that hit is this
++            # class, an ancestor, or not a method. An unrelated class in the
++            # same file must not win just because it was declared last.
++            owner = _method_owner.get(caller_nid)
++            cand_owner = _method_owner.get(unscoped) if unscoped else None
++            if (
++                cand_owner is None
++                or owner is None
++                or cand_owner == owner
++                or cand_owner in _ancestor_classes(owner)
++            ):
++                return unscoped
++            return None
++        return unscoped
+ 
+     def _fields_up_chain(tables: dict, class_nid) -> dict:
+         if not class_nid:
+@@ -6721,6 +6820,9 @@ def _extract_generic(
+                     name_node = node.child_by_field_name("name")
+                     if name_node:
+                         callee_name = _read_text(name_node, source)
++                    obj = node.child_by_field_name("object")
++                    if obj is not None and _read_text(obj, source) == "$this":
++                        member_receiver = "$this"
+             elif config.ts_module == "tree_sitter_cpp":
+                 # C++: function field, then field_expression/qualified_identifier
+                 func_node = node.child_by_field_name(config.call_function_field) if config.call_function_field else None
+@@ -6792,6 +6894,8 @@ def _extract_generic(
+                     is_member_call = True
+                     if recv.type in ("identifier", "constant"):
+                         member_receiver = _read_text(recv, source)
++                    elif recv.type == "self":
++                        member_receiver = "self"
+                     elif recv.type == "scope_resolution":
+                         # Namespaced receiver `Billing::Processor.call` — keep the whole
+                         # constant path. Truncating to the last segment discarded the
+@@ -6838,6 +6942,10 @@ def _extract_generic(
+                             obj = func_node.child_by_field_name(config.call_accessor_object_field)
+                             if obj is not None and obj.type == "identifier":
+                                 member_receiver = _read_text(obj, source)
++                            elif obj is not None and obj.type in ("this", "this_expression"):
++                                member_receiver = "this"
++                            elif obj is not None and obj.type == "super":
++                                member_receiver = "super"
+                             elif (
+                                 config.ts_module == "tree_sitter_python"
+                                 and obj is not None
+@@ -6965,6 +7073,15 @@ def _extract_generic(
+                             tgt_nid = label_to_nid.get(callee_name)
+                     else:
+                         tgt_nid = label_to_nid.get(callee_name)
++                    if node.type not in _CONSTRUCTOR_CALLS:
++                        tgt_nid = _scope_same_class_call(
++                            caller_nid,
++                            callee_name,
++                            tgt_nid,
++                            is_member_call=is_member_call,
++                            member_receiver=member_receiver,
++                            ruby_bare_self_send=_ruby_bare_self_send,
++                        )
+                     # A qualified `new A.B.Foo()` whose bare name matches only a
+                     # sourceless stub in this file would bind the call to the stub
+                     # and never reach _resolve_csharp_qualified_calls, the one pass
+diff --git a/graphify/extractors/go.py b/graphify/extractors/go.py
+index 5c22afc..851e2ac 100644
+--- a/graphify/extractors/go.py
++++ b/graphify/extractors/go.py
+@@ -4,7 +4,14 @@ from __future__ import annotations
+ 
+ import hashlib
+ from pathlib import Path
+-from graphify.extractors.base import _LANGUAGE_BUILTIN_GLOBALS, _file_stem, _make_id, _read_text
++from graphify.extractors.base import (
++    _LANGUAGE_BUILTIN_GLOBALS,
++    _file_stem,
++    _make_id,
++    _read_text,
++    index_methods_by_class,
++    resolve_own_class_method,
++)
+ 
+ 
+ _GO_PREDECLARED_TYPES = frozenset({
+@@ -108,6 +115,8 @@ def extract_go(path: Path) -> dict:
+     edges: list[dict] = []
+     seen_ids: set[str] = set()
+     function_bodies: list[tuple[str, object]] = []
++    # method nid -> the receiver variable (`d` in `func (d Dog) Speak`).
++    go_receiver_var: dict[str, str] = {}
+     # local package name (including aliases) -> written Go import path
+     go_imported_pkgs: dict[str, str] = {}
+ 
+@@ -304,10 +313,14 @@ def extract_go(path: Path) -> dict:
+         if t == "method_declaration":
+             receiver = node.child_by_field_name("receiver")
+             receiver_type: str | None = None
++            recv_var: str | None = None
+             if receiver:
+                 for param in receiver.children:
+                     if param.type == "parameter_declaration":
++                        name_node_recv = param.child_by_field_name("name")
+                         type_node = param.child_by_field_name("type")
++                        if name_node_recv is not None:
++                            recv_var = _read_text(name_node_recv, source)
+                         if type_node:
+                             receiver_type = _read_text(type_node, source).lstrip("*").strip()
+                         break
+@@ -323,6 +336,8 @@ def extract_go(path: Path) -> dict:
+                 method_nid = symbol_nid(_make_id(parent_nid, method_name), method_name)
+                 add_node(method_nid, f".{method_name}()", line)
+                 add_edge(parent_nid, method_nid, "method", line)
++                if recv_var:
++                    go_receiver_var[method_nid] = recv_var
+             else:
+                 method_nid = symbol_nid(_make_id(stem, method_name), method_name)
+                 add_node(method_nid, f"{method_name}()", line)
+@@ -478,6 +493,7 @@ def extract_go(path: Path) -> dict:
+         raw = n["label"]
+         normalised = raw.strip("()").lstrip(".")
+         label_to_nid[normalised] = n["id"]
++    _method_owner, _methods_by_class = index_methods_by_class(nodes, edges)
+ 
+     seen_call_pairs: set[tuple[str, str]] = set()
+     raw_calls: list[dict] = []
+@@ -492,6 +508,7 @@ def extract_go(path: Path) -> dict:
+             is_bare_identifier: bool = False
+             package_receiver: str | None = None
+             import_path: str | None = None
++            receiver_name = ""
+             if func_node:
+                 if func_node.type == "identifier":
+                     is_bare_identifier = True
+@@ -517,6 +534,25 @@ def extract_go(path: Path) -> dict:
+             if callee_name and callee_name not in _LANGUAGE_BUILTIN_GLOBALS:
+                 # Never resolve an imported selector through a bare local name.
+                 tgt_nid = None if import_path else label_to_nid.get(callee_name)
++                # `d.Bark()` where `d` is this method's receiver is a same-type
++                # call. Do not let another type's `Bark` in this file win.
++                recv_var = go_receiver_var.get(caller_nid)
++                if (
++                    not import_path
++                    and is_member_call
++                    and callee_name
++                    and recv_var
++                    and receiver_name == recv_var
++                ):
++                    handled, scoped = resolve_own_class_method(
++                        caller_nid,
++                        callee_name,
++                        _method_owner,
++                        _methods_by_class,
++                        tgt_nid,
++                    )
++                    if handled:
++                        tgt_nid = scoped
+                 if tgt_nid and tgt_nid != caller_nid:
+                     pair = (caller_nid, tgt_nid)
+                     if pair not in seen_call_pairs:
+diff --git a/graphify/extractors/rust.py b/graphify/extractors/rust.py
+index eefba06..4707151 100644
+--- a/graphify/extractors/rust.py
++++ b/graphify/extractors/rust.py
+@@ -3,7 +3,14 @@ from __future__ import annotations
+ 
+ 
+ from pathlib import Path
+-from graphify.extractors.base import _LANGUAGE_BUILTIN_GLOBALS, _file_stem, _make_id, _read_text
++from graphify.extractors.base import (
++    _LANGUAGE_BUILTIN_GLOBALS,
++    _file_stem,
++    _make_id,
++    _read_text,
++    index_methods_by_class,
++    resolve_own_class_method,
++)
+ 
+ 
+ # Rust prelude / std types. Language-local (like _GO_PREDECLARED_FUNCS and
+@@ -628,6 +635,7 @@ def extract_rust(path: Path) -> dict:
+         raw = n["label"]
+         normalised = raw.strip("()").lstrip(".")
+         label_to_nid[normalised] = n["id"]
++    _method_owner, _methods_by_class = index_methods_by_class(nodes, edges)
+ 
+     # Nodes whose label has no `()` suffix are data definitions (structs, enums,
+     # traits, statics), not callables. In Rust `Foo(x)` / `Foo { .. }` onto one
+@@ -678,6 +686,18 @@ def extract_rust(path: Path) -> dict:
+                 and (callee_name not in _RUST_BUILTIN_TYPES or callee_name in local_types)
+             ):
+                 tgt_nid = label_to_nid.get(callee_name)
++                # `self.bark()` belongs to this impl. Another type's `bark` in
++                # the same file must not win via the file-wide label map.
++                if is_self_call and callee_name:
++                    handled, scoped = resolve_own_class_method(
++                        caller_nid,
++                        callee_name,
++                        _method_owner,
++                        _methods_by_class,
++                        tgt_nid,
++                    )
++                    if handled:
++                        tgt_nid = scoped
+                 if tgt_nid and tgt_nid != caller_nid:
+                     pair = (caller_nid, tgt_nid)
+                     if pair not in seen_call_pairs:
+diff --git a/tests/test_same_class_method_resolution.py b/tests/test_same_class_method_resolution.py
+new file mode 100644
+index 0000000..f791e83
+--- /dev/null
++++ b/tests/test_same_class_method_resolution.py
+@@ -0,0 +1,317 @@
++"""Same-class method calls must not bind to another class's method.
++
++``label_to_nid`` is one file-wide map. A later ``bark`` overwrote an earlier
++one, so ``Dog.speak``'s ``self.bark()`` / ``this.bark()`` / bare ``bark()``
++became an EXTRACTED ``calls`` edge to ``Cat.bark``. These tests fail on that
++resolution: the edge must land on Dog's own method, and an inherited
++``self.bark()`` must not land on an unrelated ``Cat.bark``.
++"""
++from __future__ import annotations
++
++import os
++import tempfile
++from pathlib import Path
++
++import pytest
++
++from graphify.extract import extract
++
++# One file per language. Dog is declared first; Cat's same-named method used
++# to win because it was inserted last.
++_CASES: list[tuple[str, str, str, str, str]] = [
++    (
++        "zoo.py",
++        "class Dog:\n"
++        "    def speak(self):\n"
++        "        return self.bark()\n"
++        "    def bark(self):\n"
++        "        return 'woof'\n"
++        "class Cat:\n"
++        "    def speak(self):\n"
++        "        return 'meow'\n"
++        "    def bark(self):\n"
++        "        return 'hiss'\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.js",
++        "class Dog {\n"
++        "  speak() { return this.bark(); }\n"
++        "  bark() { return 'woof'; }\n"
++        "}\n"
++        "class Cat {\n"
++        "  speak() { return 'meow'; }\n"
++        "  bark() { return 'hiss'; }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.ts",
++        "class Dog {\n"
++        "  speak(): string { return this.bark(); }\n"
++        "  bark(): string { return 'woof'; }\n"
++        "}\n"
++        "class Cat {\n"
++        "  speak(): string { return 'meow'; }\n"
++        "  bark(): string { return 'hiss'; }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "Zoo.java",
++        "class Dog {\n"
++        "    String speak() { return bark(); }\n"
++        "    String bark() { return \"woof\"; }\n"
++        "}\n"
++        "class Cat {\n"
++        "    String speak() { return \"meow\"; }\n"
++        "    String bark() { return \"hiss\"; }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "Zoo.cs",
++        "class Dog {\n"
++        "    public string Speak() { return Bark(); }\n"
++        "    public string Bark() { return \"woof\"; }\n"
++        "}\n"
++        "class Cat {\n"
++        "    public string Speak() { return \"meow\"; }\n"
++        "    public string Bark() { return \"hiss\"; }\n"
++        "}\n",
++        "Dog",
++        ".Speak()",
++        ".Bark()",
++    ),
++    (
++        "zoo.cpp",
++        "class Dog {\n"
++        "public:\n"
++        "    const char* speak() { return bark(); }\n"
++        "    const char* bark() { return \"woof\"; }\n"
++        "};\n"
++        "class Cat {\n"
++        "public:\n"
++        "    const char* speak() { return \"meow\"; }\n"
++        "    const char* bark() { return \"hiss\"; }\n"
++        "};\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.go",
++        "package zoo\n"
++        "type Dog struct{}\n"
++        "type Cat struct{}\n"
++        "func (d Dog) Speak() string { return d.Bark() }\n"
++        "func (d Dog) Bark() string  { return \"woof\" }\n"
++        "func (c Cat) Speak() string { return \"meow\" }\n"
++        "func (c Cat) Bark() string  { return \"hiss\" }\n",
++        "Dog",
++        ".Speak()",
++        ".Bark()",
++    ),
++    (
++        "zoo.rs",
++        "struct Dog;\n"
++        "struct Cat;\n"
++        "impl Dog {\n"
++        "    fn speak(&self) -> &str { self.bark() }\n"
++        "    fn bark(&self) -> &str { \"woof\" }\n"
++        "}\n"
++        "impl Cat {\n"
++        "    fn speak(&self) -> &str { \"meow\" }\n"
++        "    fn bark(&self) -> &str { \"hiss\" }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.rb",
++        "class Dog\n"
++        "  def speak\n"
++        "    bark\n"
++        "  end\n"
++        "  def bark\n"
++        "    'woof'\n"
++        "  end\n"
++        "end\n"
++        "class Cat\n"
++        "  def speak\n"
++        "    'meow'\n"
++        "  end\n"
++        "  def bark\n"
++        "    'hiss'\n"
++        "  end\n"
++        "end\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.php",
++        "<?php\n"
++        "class Dog {\n"
++        "    function speak() { return $this->bark(); }\n"
++        "    function bark() { return 'woof'; }\n"
++        "}\n"
++        "class Cat {\n"
++        "    function speak() { return 'meow'; }\n"
++        "    function bark() { return 'hiss'; }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.kt",
++        "class Dog {\n"
++        "    fun speak(): String = bark()\n"
++        "    fun bark(): String = \"woof\"\n"
++        "}\n"
++        "class Cat {\n"
++        "    fun speak(): String = \"meow\"\n"
++        "    fun bark(): String = \"hiss\"\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++    (
++        "zoo.swift",
++        "class Dog {\n"
++        "    func speak() -> String { return bark() }\n"
++        "    func bark() -> String { return \"woof\" }\n"
++        "}\n"
++        "class Cat {\n"
++        "    func speak() -> String { return \"meow\" }\n"
++        "    func bark() -> String { return \"hiss\" }\n"
++        "}\n",
++        "Dog",
++        ".speak()",
++        ".bark()",
++    ),
++]
++
++
++def _extract(tmp_path: Path, filename: str, source: str) -> dict:
++    path = tmp_path / filename
++    path.write_text(source, encoding="utf-8")
++    old = os.getcwd()
++    try:
++        os.chdir(tmp_path)
++        return extract([path], cache_root=Path(tempfile.mkdtemp()))
++    finally:
++        os.chdir(old)
++
++
++def _method_id(result: dict, class_label: str, method_label: str) -> str:
++    classes = [n["id"] for n in result["nodes"] if n.get("label") == class_label]
++    assert len(classes) == 1, f"expected one {class_label!r}, got {classes}"
++    class_id = classes[0]
++    nodes = {n["id"]: n for n in result["nodes"]}
++    found = [
++        e["target"]
++        for e in result["edges"]
++        if e.get("relation") == "method"
++        and e.get("source") == class_id
++        and nodes.get(e.get("target"), {}).get("label") == method_label
++    ]
++    assert len(found) == 1, f"no single {class_label}.{method_label}, got {found}"
++    return found[0]
++
++
++def _calls(result: dict, src: str, tgt: str) -> list[dict]:
++    return [
++        e
++        for e in result["edges"]
++        if e.get("relation") == "calls" and e.get("source") == src and e.get("target") == tgt
++    ]
++
++
++@pytest.mark.parametrize(
++    ("filename", "source", "class_label", "speak", "bark"),
++    _CASES,
++    ids=[name for name, *_rest in _CASES],
++)
++def test_self_call_binds_to_own_class_not_the_later_class(
++    tmp_path: Path, filename: str, source: str, class_label: str, speak: str, bark: str,
++) -> None:
++    result = _extract(tmp_path, filename, source)
++    dog_speak = _method_id(result, class_label, speak)
++    dog_bark = _method_id(result, class_label, bark)
++    cat_bark = _method_id(result, "Cat", bark)
++    own = _calls(result, dog_speak, dog_bark)
++    assert own, f"{filename}: {class_label}.{speak} did not call its own {bark}"
++    assert all(e.get("confidence") == "EXTRACTED" for e in own)
++    assert not _calls(result, dog_speak, cat_bark), (
++        f"{filename}: {class_label}.{speak} bound to Cat.{bark}"
++    )
++
++
++def test_python_module_level_call_still_resolves(tmp_path: Path) -> None:
++    result = _extract(
++        tmp_path,
++        "mod.py",
++        "def helper():\n"
++        "    return 1\n"
++        "class Dog:\n"
++        "    def speak(self):\n"
++        "        return helper()\n"
++        "class Cat:\n"
++        "    def bark(self):\n"
++        "        return 'hiss'\n",
++    )
++    speak = _method_id(result, "Dog", ".speak()")
++    helper = next(n["id"] for n in result["nodes"] if n.get("label") == "helper()")
++    assert _calls(result, speak, helper)
++    assert not _calls(result, speak, _method_id(result, "Cat", ".bark()"))
++
++
++def test_python_other_receiver_is_not_pulled_onto_the_caller_class(tmp_path: Path) -> None:
++    """``other.bark()`` is not a self/this call and must not become Dog.bark."""
++    result = _extract(
++        tmp_path,
++        "other.py",
++        "class Dog:\n"
++        "    def speak(self, other):\n"
++        "        return other.bark()\n"
++        "    def bark(self):\n"
++        "        return 'woof'\n"
++        "class Cat:\n"
++        "    def bark(self):\n"
++        "        return 'hiss'\n",
++    )
++    speak = _method_id(result, "Dog", ".speak()")
++    assert not _calls(result, speak, _method_id(result, "Dog", ".bark()"))
++    assert not _calls(result, speak, _method_id(result, "Cat", ".bark()"))
++
++
++def test_inherited_self_call_does_not_bind_to_unrelated_class(tmp_path: Path) -> None:
++    """Dog(Base).speak calls self.bark defined on Base. Cat.bark must not win."""
++    result = _extract(
++        tmp_path,
++        "inherit.py",
++        "class Base:\n"
++        "    def bark(self):\n"
++        "        return 'woof'\n"
++        "class Dog(Base):\n"
++        "    def speak(self):\n"
++        "        return self.bark()\n"
++        "class Cat:\n"
++        "    def bark(self):\n"
++        "        return 'hiss'\n",
++    )
++    speak = _method_id(result, "Dog", ".speak()")
++    cat_bark = _method_id(result, "Cat", ".bark()")
++    assert not _calls(result, speak, cat_bark)
+-- 
+2.47.1
+

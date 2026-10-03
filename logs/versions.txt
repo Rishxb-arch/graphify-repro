@@ -1,0 +1,4 @@
+graphifyy 0.9.74 (PyPI); python Python 3.12.14
+repo HEAD tested too: Graphify-Labs/graphify 0b60d47e6cd9338c51143f39f35b6c45c8453385 (v0.9.74-1-g0b60d47, 2026-10-02)
+Linux 6.12.94+ x86_64
+CPU-only box, no LLM/API key used (graphify extract --code-only)

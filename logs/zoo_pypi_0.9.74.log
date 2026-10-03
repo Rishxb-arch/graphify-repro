@@ -1,0 +1,12 @@
+Zoo.cs: .Speak() (zoo_cs_zoo_dog_speak) -> .Bark() (zoo_cs_zoo_cat_bark, Zoo.cs L7) [EXTRACTED] @L2
+Zoo.java: .speak() (zoo_java_zoo_dog_speak) -> .bark() (zoo_java_zoo_cat_bark, Zoo.java L7) [EXTRACTED] @L2
+zoo.cpp: .speak() (zoo_cpp_zoo_dog_speak) -> .bark() (zoo_cpp_zoo_cat_bark, zoo.cpp L9) [EXTRACTED] @L3
+zoo.go: .Speak() (zoo_go_zoo_dog_speak) -> .Bark() (zoo_go_zoo_cat_bark, zoo.go L9) [EXTRACTED] @L6
+zoo.js: .speak() (zoo_js_zoo_dog_speak) -> .bark() (zoo_js_zoo_cat_bark, zoo.js L7) [EXTRACTED] @L2
+zoo.kt: .speak() (zoo_kt_zoo_dog_speak) -> .bark() (zoo_kt_zoo_cat_bark, zoo.kt L7) [EXTRACTED] @L2
+zoo.php: .speak() (zoo_php_zoo_dog_speak) -> .bark() (zoo_php_zoo_cat_bark, zoo.php L8) [EXTRACTED] @L3
+zoo.py: .speak() (zoo_py_zoo_dog_speak) -> .bark() (zoo_py_zoo_cat_bark, zoo.py L13) [EXTRACTED] @L3
+zoo.rb: .speak() (zoo_rb_zoo_dog_speak) -> .bark() (zoo_rb_zoo_cat_bark, zoo.rb L13) [EXTRACTED] @L3
+zoo.rs: .speak() (zoo_rs_zoo_dog_speak) -> .bark() (zoo_rs_zoo_cat_bark, zoo.rs L9) [EXTRACTED] @L4
+zoo.swift: .speak() (zoo_swift_zoo_dog_speak) -> .bark() (zoo_swift_zoo_cat_bark, zoo.swift L7) [EXTRACTED] @L2
+zoo.ts: .speak() (zoo_ts_zoo_dog_speak) -> .bark() (zoo_ts_zoo_cat_bark, zoo.ts L7) [EXTRACTED] @L2
